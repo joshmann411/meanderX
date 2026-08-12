@@ -1,0 +1,19 @@
+{
+  "objectIdFieldName": "OBJECTID",
+  "fields": [
+    {"name": "FEEDER_ID", "type": "esriFieldTypeString"},
+    {"name": "PV_THERMAL", "type": "esriFieldTypeString"},
+    {"name": "OBJECTID", "type": "esriFieldTypeInteger"}
+  ],
+  "features": [
+    {
+      "attributes": {
+        "FEEDER_ID": "FDR-001",
+        "PV_THERMAL": "N",
+        "OBJECTID": 123
+      },
+      "geometry": {"x": -73.94, "y": 40.70, "spatialReference": {"wkid": 4326}}
+    }
+  ],
+  "spatialReference": {"wkid": 4326}
+}
