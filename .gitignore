@@ -38,9 +38,13 @@ venv.bak/
 
 # Pytest
 .pytest_cache/
+.hypothesis/
 
 # mypy
 .mypy_cache/
+.ruff_cache/
+.pyre/
+.pytype/
 
 # Coverage
 .coverage
@@ -64,11 +68,18 @@ pip-delete-this-directory.txt
 # Unit test / coverage reports
 htmlcov/
 tox.ini
+.tox/
+.nox/
 nose2-junit.xml
+junit.xml
+test-results/
+reports/
 
 # Environment variables
 .env
 .env.*
+!.env.example
+!.env.*.example
 
 # VS Code
 .vscode/
@@ -79,10 +90,15 @@ nose2-junit.xml
 # Docker
 docker-compose.override.yml
 .docker/
+docker-data/
+postgres-data/
 
 # Database
 *.db
 *.sqlite3
+*.sqlite
+*.dump
+*.sql.gz
 
 # Logs
 *.log
@@ -99,4 +115,6 @@ Desktop.ini
 # Secret and local files
 secrets.yml
 local_settings.py
+.codex/
+.agents/
 
