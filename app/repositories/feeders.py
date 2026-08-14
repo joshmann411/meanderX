@@ -4,7 +4,7 @@ from typing import Optional
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.models import Feeder, Substation
+from app.models import Feeder, OsmSubstation, Substation, SubstationOsmMatch
 
 
 @dataclass(frozen=True)
@@ -18,6 +18,9 @@ class FeederRow:
 class SubstationRow:
     substation: Substation
     geometry_geojson: Optional[str]
+    osm_geometry_geojson: Optional[str]
+    osm_substation: Optional[OsmSubstation]
+    osm_match: Optional[SubstationOsmMatch]
     feeder_count: int
 
 
@@ -65,19 +68,30 @@ class FeederRepository:
             self.db.query(
                 Substation,
                 func.ST_AsGeoJSON(Substation.geometry),
+                func.ST_AsGeoJSON(OsmSubstation.geometry),
+                OsmSubstation,
+                SubstationOsmMatch,
                 func.count(Feeder.id),
             )
             .outerjoin(Feeder, Feeder.substation_id == Substation.id)
+            .outerjoin(
+                SubstationOsmMatch,
+                (SubstationOsmMatch.substation_id == Substation.id) & (SubstationOsmMatch.accepted.is_(True)),
+            )
+            .outerjoin(OsmSubstation, OsmSubstation.id == SubstationOsmMatch.osm_substation_id)
             .filter(Substation.source_substation_id == substation_id)
-            .group_by(Substation.id)
+            .group_by(Substation.id, OsmSubstation.id, SubstationOsmMatch.id)
             .first()
         )
         if not row:
             return None
-        substation, geometry_geojson, feeder_count = row
+        substation, geometry_geojson, osm_geometry_geojson, osm_substation, osm_match, feeder_count = row
         return SubstationRow(
             substation=substation,
             geometry_geojson=geometry_geojson,
+            osm_geometry_geojson=osm_geometry_geojson,
+            osm_substation=osm_substation,
+            osm_match=osm_match,
             feeder_count=feeder_count,
         )
 

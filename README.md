@@ -1,185 +1,212 @@
 # MeanderX
 
-Python/FastAPI service for ingesting Con Edison ArcGIS feeder data into PostgreSQL/PostGIS.
+## Overview
 
-## Current Status
+MeanderX ingests Con Edison hosting-capacity data, stores it in PostgreSQL/PostGIS, and exposes stable customer APIs for feeders, substations, hosting capacity, geometry, queue availability, historical snapshots, and change detection.
 
-- Phase 1 foundation is in place: FastAPI app, environment config, ArcGIS source models/client, Alembic, PostgreSQL/PostGIS, and offline tests.
-- Phase 2 ingestion path is in place: extract, validate, transform, load, domain tables, ingestion run tracking, feeder/substation persistence, and repeat-ingestion upserts.
-- Phase 3 customer query API is in place: feeder lookup/search, substation lookup, substation feeders, queue limitation response, Swagger/OpenAPI docs, and API tests.
-- Phase 4 historical snapshots are in place: immutable feeder/substation snapshots, deterministic dataset hashes, unchanged dataset handling, and history/change APIs.
-- Live ingestion requires a real Con Edison ArcGIS FeatureServer layer URL in `.env`.
+The upstream ArcGIS source represents current state. MeanderX preserves historical snapshots locally so customers can see how feeder hosting-capacity data changes over time.
 
-## Local Setup
+## Quick Start
 
-Copy the environment template:
+The primary reviewer command is:
 
-```powershell
-Copy-Item .env.example .env
+```bash
+./run.sh
 ```
 
-Edit `.env` and set `ARC_GIS_ENDPOINT` to the real FeatureServer layer URL. The checked-in value is a placeholder.
+Default mode is deterministic demo mode. It builds Docker images, starts PostGIS, applies migrations, seeds fixture data, starts FastAPI, and prints useful URLs.
 
-Keep the database URL using the Psycopg 3 SQLAlchemy driver:
-
-```env
-DATABASE_URL=postgresql+psycopg://postgres:postgres@db:5432/meanderx
-```
-
-## Start And Run Locally
-
-Build the application image:
-
-```powershell
-docker-compose build app
-```
-
-Start PostgreSQL/PostGIS:
-
-```powershell
-docker-compose up -d db
-```
-
-Run migrations:
-
-```powershell
-docker-compose run --rm app alembic -c migrations/alembic.ini upgrade head
-```
-
-Run tests:
-
-```powershell
-docker-compose run --rm app pytest -q
-```
-
-Start the API:
-
-```powershell
-docker-compose up -d app
-```
-
-Check health:
-
-```powershell
-Invoke-RestMethod -Uri http://localhost:8000/health
-```
-
-Expected response includes:
-
-```json
-{"status":"healthy","env":"development"}
-```
-
-## Run Ingestion
-
-After migrations are applied and `ARC_GIS_ENDPOINT` points to the real source:
-
-```powershell
-docker-compose run --rm app python -m app.cli ingest conedison
-```
-
-The pipeline retrieves ArcGIS pages, validates feeder records, transforms geometry to SRID 4326 EWKT for PostGIS, upserts current feeders/substations, marks missing feeders inactive, and records the ingestion run.
-
-Successful changed ingestions also create immutable snapshot rows. If the normalized dataset hash matches the latest captured dataset, the ingestion run is marked `UNCHANGED` and duplicate snapshot rows are skipped.
-
-## Phase 1 Customer API Usage
-
-Swagger/OpenAPI docs are available after startup:
+Reviewer URLs:
 
 ```text
-http://localhost:8000/docs
+API: http://localhost:8000
+Swagger: http://localhost:8000/docs
 ```
+
+Demo IDs:
+
+```text
+Feeder: DEMO-F1
+Substation: DEMO-SUB-A
+```
+
+## Architecture
+
+```mermaid
+flowchart LR
+  ArcGIS[Con Edison ArcGIS] --> ConEd[Con Edison Pipeline]
+  OSM[OpenStreetMap / Overpass] --> OsmPipe[OSM Pipeline]
+  ConEd --> Current[Current State]
+  ConEd --> History[Immutable Snapshot History]
+  OsmPipe --> OsmCandidates[OSM Substation Candidates]
+  Current --> Matcher[Substation Matcher]
+  OsmCandidates --> Matcher
+  Current --> DB[(PostgreSQL + PostGIS)]
+  History --> DB
+  Matcher --> DB
+  DB --> API[FastAPI / Swagger]
+  API --> Customer[Customer]
+```
+
+## Demo Mode
+
+Demo mode avoids external dependencies and is safe for review:
+
+```bash
+APP_MODE=demo ./run.sh
+```
+
+It creates deterministic fixture data showing:
+
+- feeder lookup
+- hosting capacity
+- feeder geometry
+- substation lookup
+- substation feeders
+- queue unavailable behavior
+- historical snapshots
+- change detection
+- OSM geometry enrichment and provenance
+
+Demo fixtures are explicitly seeded through `python -m app.cli demo seed`; they are not mixed into live ingestion.
+
+## Live Mode
+
+Live mode uses external sources:
+
+```bash
+APP_MODE=live ./run.sh
+```
+
+Before running live mode, edit `.env`:
+
+```env
+ARC_GIS_ENDPOINT=<real Con Edison FeatureServer layer URL>
+OSM_OVERPASS_URL=https://overpass-api.de/api/interpreter
+OSM_BBOX=40.4774,-74.2591,40.9176,-73.7004
+OSM_MATCH_THRESHOLD=0.72
+```
+
+If OSM ingestion is unavailable, the script reports that clearly and leaves the core Con Edison API available.
+
+## CLI
+
+```bash
+python -m app.cli ingest conedison
+python -m app.cli ingest osm
+python -m app.cli ingest all
+python -m app.cli demo seed
+python -m app.cli api
+```
+
+## API Examples
 
 Search feeders:
 
-```powershell
-curl "http://localhost:8000/api/v1/feeders?feederId=ABC&limit=20&offset=0"
+```bash
+curl "http://localhost:8000/api/v1/feeders?feederId=DEMO&limit=20&offset=0"
 ```
 
 Get a feeder:
 
-```powershell
-curl "http://localhost:8000/api/v1/feeders/ABC123"
+```bash
+curl "http://localhost:8000/api/v1/feeders/DEMO-F1"
 ```
 
-Get a substation:
+Get queue information:
 
-```powershell
-curl "http://localhost:8000/api/v1/substations/SUB001"
+```bash
+curl "http://localhost:8000/api/v1/feeders/DEMO-F1/queue"
 ```
-
-List feeders connected to a substation:
-
-```powershell
-curl "http://localhost:8000/api/v1/substations/SUB001/feeders?limit=50&offset=0"
-```
-
-Get feeder queue information:
-
-```powershell
-curl "http://localhost:8000/api/v1/feeders/ABC123/queue"
-```
-
-Queue response note: the current hosting-capacity source does not expose enough project queue data to derive a reliable project count. The API returns `available: false` and a stable explanatory reason instead of inventing a value.
 
 Get feeder history:
 
-```powershell
-curl "http://localhost:8000/api/v1/feeders/ABC123/history"
-```
-
-Optionally filter by capture time:
-
-```powershell
-curl "http://localhost:8000/api/v1/feeders/ABC123/history?capturedFrom=2026-01-01T00:00:00Z"
+```bash
+curl "http://localhost:8000/api/v1/feeders/DEMO-F1/history"
 ```
 
 Get feeder changes:
 
-```powershell
-curl "http://localhost:8000/api/v1/feeders/ABC123/changes"
+```bash
+curl "http://localhost:8000/api/v1/feeders/DEMO-F1/changes"
 ```
 
-Change events include `added`, `removed`, `modified`, and `unchanged` where the available snapshots support those comparisons.
+Get a substation:
+
+```bash
+curl "http://localhost:8000/api/v1/substations/DEMO-SUB-A"
+```
+
+List feeders connected to a substation:
+
+```bash
+curl "http://localhost:8000/api/v1/substations/DEMO-SUB-A/feeders"
+```
 
 ## Historical Data
 
-The upstream ArcGIS source represents the latest known state and does not preserve every previous version for this application. MeanderX captures history at ingestion time:
+Successful changed ingestions create immutable snapshot rows:
 
-- `feeders` and `substations` hold the current query state.
-- `feeder_snapshots` and `substation_snapshots` hold immutable historical state per successful changed ingestion run.
-- `ingestion_runs.dataset_hash` stores a SHA-256 hash of normalized domain values sorted by feeder ID, so source ordering does not create false changes.
-- Failed ingestions do not create snapshots.
-- Unchanged ingestions are recorded as attempts with status `UNCHANGED` but do not duplicate snapshot rows.
+- `feeders` and `substations` hold current state.
+- `feeder_snapshots` and `substation_snapshots` hold historical state.
+- `ingestion_runs.dataset_hash` stores a deterministic SHA-256 hash of normalized domain values sorted by feeder ID.
+- Identical datasets are marked `UNCHANGED` and do not create duplicate snapshots.
+- Failed ingestions do not create valid snapshots.
 
-## Useful Commands
+## OSM Enrichment
 
-View running containers:
+OpenStreetMap substations are ingested from bounded Overpass queries using `power=substation`. OpenInfraMap is documented as a visualization of OSM infrastructure data, not a runtime dependency.
 
-```powershell
-docker-compose ps
+The matcher stores:
+
+- Con Edison substation
+- OSM substation
+- confidence score from 0 to 1
+- match method
+- distance where available
+- accepted/rejected decision
+
+Low-confidence or ambiguous matches remain unresolved. Accepted matches expose `geometrySource` in the substation API.
+
+## Pipeline Design
+
+Pipelines follow a lightweight lifecycle:
+
+```text
+extract -> validate -> transform -> load
 ```
 
-View app logs:
+Source-specific behavior lives under `app/pipelines/conedison` and `app/pipelines/osm`. API handlers use service and repository layers rather than direct source or SQL logic.
 
-```powershell
-docker-compose logs -f app
+## Testing
+
+Run the complete test and quality command:
+
+```bash
+./scripts/test.sh
 ```
 
-Stop services:
+Equivalent core test command:
 
-```powershell
-docker-compose down
+```bash
+docker-compose run --rm app pytest -q
 ```
 
-Reset the local database volume if you need a clean database:
+## Limitations
 
-```powershell
-docker-compose down -v
-docker-compose up -d db
-docker-compose run --rm app alembic -c migrations/alembic.ini upgrade head
-```
+- The Con Edison queue count is not invented because the hosting-capacity source does not expose enough queue/project data.
+- Live ingestion depends on the configured ArcGIS endpoint and internet availability.
+- OSM matching depends on community-maintained tags and may miss substations with weak names/operators.
+- Feeder geometry proximity helps matching but is evidence, not proof.
+- There is no authentication or rate limiting in this assessment build.
 
-## Source Notes
+## What I Would Do With More Time
 
-See [docs/data-sources.md](docs/data-sources.md) for ArcGIS source findings and limitations. Queue information is not currently derived unless it exists in the configured source layer.
+- Scheduled ingestion with orchestration.
+- Exponential backoff and richer retry telemetry.
+- Raw source payload archiving in object storage.
+- API authentication and rate limiting.
+- Monitoring, alerting, and ingestion notifications.
+- Manual OSM match review/override workflow.
+- CI/CD and cloud deployment.
+- Partitioning or retention policies for long historical timelines.

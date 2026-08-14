@@ -112,6 +112,6 @@ class ConEdisonArcGISClient:
         data = r.json()
         try:
             return ArcGISResponse.model_validate(data)
-        except Exception as e:
+        except Exception:
             logger.exception("Failed to parse ArcGIS response")
             raise

@@ -5,6 +5,7 @@ from app.api.v1.schemas import (
     ConnectedFeederSummary,
     FeederResponse,
     FeederSearchResponse,
+    GeometrySource,
     HostingCapacity,
     QueueResponse,
     ResponseData,
@@ -82,10 +83,22 @@ def _feeder_response(row: FeederRow) -> FeederResponse:
 
 def _substation_response(row: SubstationRow) -> SubstationResponse:
     substation = row.substation
+    geometry = row.geometry_geojson
+    geometry_source = None
+    if not geometry and row.osm_geometry_geojson and row.osm_substation and row.osm_match:
+        geometry = row.osm_geometry_geojson
+        geometry_source = GeometrySource(
+            source="osm",
+            osmId=row.osm_substation.osm_id,
+            matchConfidence=row.osm_match.confidence,
+            matchMethod=row.osm_match.match_method,
+            distanceMeters=row.osm_match.distance_meters,
+        )
     return SubstationResponse(
         substationId=substation.source_substation_id or str(substation.id),
         name=substation.name,
-        geometry=_geojson(row.geometry_geojson),
+        geometry=_geojson(geometry),
+        geometrySource=geometry_source,
         connectedFeeders=ConnectedFeederSummary(count=row.feeder_count),
         sourceMetadata={"source": substation.source},
     )

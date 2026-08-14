@@ -1,5 +1,5 @@
 import json
-import httpx
+
 from app.conedison.client import ConEdisonArcGISClient
 from app.conedison.models import ArcGISResponse
 

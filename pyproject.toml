@@ -21,10 +21,18 @@ geoalchemy2 = "^0.13.0"
 pytest = "^7.3.0"
 pytest-asyncio = "^0.23.0"
 python-dotenv = "^1.0.0"
+ruff = "^0.6.0"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 160
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

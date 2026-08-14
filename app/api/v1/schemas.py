@@ -42,10 +42,21 @@ class ConnectedFeederSummary(BaseModel):
     count: int
 
 
+class GeometrySource(BaseModel):
+    source: str
+    osm_id: Optional[str] = Field(default=None, alias="osmId")
+    match_confidence: Optional[float] = Field(default=None, alias="matchConfidence")
+    match_method: Optional[str] = Field(default=None, alias="matchMethod")
+    distance_meters: Optional[float] = Field(default=None, alias="distanceMeters")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class SubstationResponse(BaseModel):
     substation_id: str = Field(alias="substationId", examples=["SUB001"])
     name: Optional[str] = None
     geometry: Optional[dict[str, Any]] = None
+    geometry_source: Optional[GeometrySource] = Field(default=None, alias="geometrySource")
     connected_feeders: ConnectedFeederSummary = Field(alias="connectedFeeders")
     source_metadata: dict[str, Any] = Field(default_factory=dict, alias="sourceMetadata")
 

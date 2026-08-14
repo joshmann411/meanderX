@@ -1,5 +1,4 @@
-from app.config.settings import Settings, settings
-import os
+from app.config.settings import Settings
 
 
 def test_settings_loads_from_env(tmp_path, monkeypatch):

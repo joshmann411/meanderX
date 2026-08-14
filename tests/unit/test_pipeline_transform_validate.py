@@ -1,4 +1,3 @@
-import json
 from app.pipelines.conedison.pipeline import ConEdisonPipeline
 from app.conedison.client import ConEdisonArcGISClient
 from app.conedison.models import ArcGISFeature, ArcGISAttributes, ArcGISGeometry

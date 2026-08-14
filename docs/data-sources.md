@@ -1,17 +1,75 @@
-# Data Sources — ArcGIS FeatureServer Investigation
+# Data Sources
 
-This document captures findings from inspecting the Con Edison ArcGIS FeatureServer used as the source for feeder/queue data.
+## Con Edison ArcGIS
 
-Key findings (initial discovery):
+The Con Edison ingestion source is an ArcGIS FeatureServer layer configured by `ARC_GIS_ENDPOINT`.
 
-- Endpoint: see `.env.example` for configured `ARC_GIS_ENDPOINT`.
-- Geometry: features include `geometry` with `x`/`y` and `spatialReference` (commonly EPSG:4326 but verify per-service).
-- Fields: service `fields` array describes available attributes. Observed fields include `FEEDER_ID`, `PV_THERMAL`, and `OBJECTID` in sample metadata.
-- Object ID: `OBJECTID` is typically the `objectIdFieldName` returned by the service.
-- Pagination: ArcGIS FeatureServer supports `resultOffset`/`resultRecordCount` and `where` queries; large services may return `exceededTransferLimit=true` and require paging.
-- Max record count: service metadata contains `maxRecordCount`; check `GET ?f=json` metadata to determine value.
-- Duplicate feeders / multiplicity: the source may include multiple rows for the same `FEEDER_ID` (e.g., multiple geometry points or parcels). Further analysis required to determine canonical feeder deduplication.
-- Queue derivation: there is no explicit `queue_count` field in the observed feed. Deriving queue counts may require joining with other sources or aggregating rows — this could be unsupported by this single FeatureServer endpoint.
-- Nullability: fields may be null; fields metadata includes `nullable` flags.
+Endpoint discovery approach:
 
-Discovery process: use browser Developer Tools > Network tab to capture FeatureServer `query` calls made by the ArcGIS web app. The web app often issues `FeatureServer/0/query` requests with `where`, `outFields`, and `f=json` parameters.
+- Open the public ArcGIS/Experience page in a browser.
+- Use Developer Tools Network requests.
+- Look for `FeatureServer/.../query` calls.
+- Inspect service metadata with `?f=json`.
+- Confirm fields, geometry type, spatial reference, maximum record count, and object ID field.
+
+Fields used by the application:
+
+- `FEEDER_ID`: required feeder identifier.
+- `PV_THERMAL`: hosting-capacity value.
+- `OBJECTID`: ArcGIS object identifier used for pagination duplicate protection when available.
+- `SUBSTATION`, `SUBSTATION_ID`, `SUBSTN_ID`, `SUBSTATION_NAME`: optional substation relationship candidates when present.
+
+Pagination:
+
+- Uses ArcGIS `resultOffset` and `resultRecordCount`.
+- Uses service `maxRecordCount` when available.
+- Uses `returnCountOnly=true` when available.
+- Tracks object IDs to avoid repeated-page loops.
+
+Geometry:
+
+- Source geometry may be point, polyline, or polygon-like ArcGIS JSON.
+- Application normalizes supported geometry to SRID 4326 EWKT for PostGIS.
+- Public APIs return GeoJSON via PostGIS.
+
+Queue limitation:
+
+- The configured hosting-capacity source does not expose enough project queue information to derive reliable queue counts.
+- The queue endpoint returns `available: false` with a stable reason instead of inventing data.
+
+## OpenStreetMap
+
+OpenStreetMap substation enrichment uses `power=substation`.
+
+Relevant tags:
+
+- `name`
+- `operator`
+- `voltage`
+- `substation`
+- `location`
+- `ref`
+
+Extraction strategy:
+
+- Uses a bounded Overpass query over the configured `OSM_BBOX`.
+- Fetches nodes, ways, and relations tagged `power=substation`.
+- Normalizes OSM ID, geometry, centroid, name, operator, voltage, substation type, and source tags.
+
+## OpenInfraMap
+
+OpenInfraMap is useful for investigation because it visualizes selected infrastructure data from OpenStreetMap. It is not used as the runtime source; the application ingests OpenStreetMap-style records directly.
+
+References:
+
+- https://wiki.openstreetmap.org/wiki/Tag:power%3Dsubstation
+- https://wiki.openstreetmap.org/wiki/Key:substation
+- https://github.com/openinframap/openinframap
+
+## Known Data Limitations
+
+- Con Edison substation identifiers may not match OSM names exactly.
+- OSM operator/name tags can be missing, abbreviated, or inconsistent.
+- OSM geometry may be node, way, or relation.
+- Feeder geometry proximity is inferential.
+- Low-confidence or ambiguous OSM matches are intentionally rejected.
