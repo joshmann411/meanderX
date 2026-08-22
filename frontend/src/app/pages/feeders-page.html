@@ -1,0 +1,80 @@
+<section class="page-heading compact">
+  <p class="eyebrow">Feeder lookup</p>
+  <h1>Search hosting capacity by feeder.</h1>
+  <p class="lede">Use customer terms: feeder ID, substation ID, and minimum PV thermal capacity. The app hides ArcGIS query syntax.</p>
+</section>
+
+<section class="workspace">
+  <aside class="search-panel">
+    <label>
+      Feeder ID
+      <input [(ngModel)]="feederId" placeholder="DEMO-F1 or 103U1" (keyup.enter)="search()" />
+    </label>
+    <label>
+      Substation ID
+      <input [(ngModel)]="substationId" placeholder="DEMO-SUB-A or GRANITE HILL" (keyup.enter)="search()" />
+    </label>
+    <label>
+      Min PV thermal
+      <input type="number" [(ngModel)]="minPvThermal" placeholder="0.5" (keyup.enter)="search()" />
+    </label>
+    <button class="button primary full" (click)="search()">Search</button>
+    @if (loading) {
+      <div class="notice small">Searching...</div>
+    }
+    @if (error) {
+      <div class="notice error small">{{ error }}</div>
+    }
+
+    <div class="result-list">
+      @for (item of results; track item.feederId) {
+        <button class="result-item" [class.active]="selected?.feederId === item.feederId" (click)="select(item)">
+          <b>{{ item.feederId }}</b>
+          <span>{{ item.substationId || 'No substation' }}</span>
+          <em>{{ item.hostingCapacity.pvThermal ?? 'n/a' }} MW</em>
+        </button>
+      }
+    </div>
+  </aside>
+
+  <main class="detail-panel">
+    @if (selected) {
+      <div class="detail-header">
+        <div>
+          <span class="label">Feeder</span>
+          <h2>{{ selected.feederId }}</h2>
+        </div>
+        <div class="capacity">
+          <span>PV thermal</span>
+          <strong>{{ selected.hostingCapacity.pvThermal ?? 'n/a' }}</strong>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <article class="panel">
+          <div class="panel-title"><span>Geometry</span></div>
+          <app-geometry-preview [geometry]="selected.geometry"></app-geometry-preview>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title"><span>Customer response</span></div>
+          <dl>
+            <dt>Substation</dt>
+            <dd>{{ selected.substationId || 'Unknown' }}</dd>
+            <dt>Source</dt>
+            <dd>{{ selected.data.source }}</dd>
+            <dt>Captured</dt>
+            <dd>{{ selected.data.capturedAt | date:'medium' }}</dd>
+            <dt>Queue</dt>
+            <dd>{{ queue?.available ? queue?.projectCount : queue?.reason || 'Checking...' }}</dd>
+          </dl>
+        </article>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <h2>Start with a feeder search.</h2>
+        <p>Demo mode accepts <b>DEMO-F1</b>. Live mode can use values like <b>103U1</b> after live ingestion.</p>
+      </div>
+    }
+  </main>
+</section>

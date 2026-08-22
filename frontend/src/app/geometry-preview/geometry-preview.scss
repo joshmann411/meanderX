@@ -1,0 +1,59 @@
+.preview,
+.empty-preview {
+  min-height: 220px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7f4ec;
+  overflow: hidden;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: 180px;
+}
+
+rect {
+  fill: #eef3ef;
+}
+
+.grid path {
+  fill: none;
+  stroke: rgba(67, 86, 79, 0.16);
+  stroke-width: 1;
+}
+
+.shape {
+  fill: none;
+  stroke: #1d6f5f;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+circle {
+  fill: #d25c3f;
+}
+
+.node {
+  fill: #f7f4ec;
+  stroke: #1d6f5f;
+  stroke-width: 2;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.empty-preview {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  background: repeating-linear-gradient(135deg, #f7f4ec, #f7f4ec 12px, #efe9dc 12px, #efe9dc 24px);
+}

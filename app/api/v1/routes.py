@@ -11,12 +11,15 @@ from app.api.v1.schemas import (
     FeederSearchResponse,
     QueueResponse,
     SubstationResponse,
+    SystemSummaryResponse,
 )
 from app.core.database import get_db
 from app.repositories.feeders import FeederRepository
 from app.repositories.history import HistoryRepository
+from app.repositories.system import SystemRepository
 from app.services.feeders import FeederQueryService, NotFoundError
 from app.services.history import FeederHistoryService
+from app.services.system import SystemSummaryService
 
 router = APIRouter(prefix="/api/v1", tags=["Customer Query API"])
 
@@ -27,6 +30,22 @@ def get_query_service(db: Session = Depends(get_db)) -> FeederQueryService:
 
 def get_history_service(db: Session = Depends(get_db)) -> FeederHistoryService:
     return FeederHistoryService(HistoryRepository(db))
+
+
+def get_system_service(db: Session = Depends(get_db)) -> SystemSummaryService:
+    return SystemSummaryService(SystemRepository(db))
+
+
+@router.get(
+    "/system/summary",
+    response_model=SystemSummaryResponse,
+    summary="Get platform summary",
+    description="Return dashboard-friendly mode, ingestion, count, source, and pipeline metadata for the customer explorer.",
+)
+def get_system_summary(
+    service: SystemSummaryService = Depends(get_system_service),
+):
+    return service.summary()
 
 
 @router.get(

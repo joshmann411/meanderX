@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
 
@@ -11,6 +12,14 @@ app = FastAPI(
     title="MeanderX Customer Query API",
     description="Domain-oriented API for querying Con Edison feeder and substation data ingested into PostGIS.",
     version="0.1.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200"],
+    allow_credentials=False,
+    allow_methods=["GET"],
+    allow_headers=["*"],
 )
 
 app.include_router(api_v1_router)

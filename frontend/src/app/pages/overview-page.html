@@ -1,0 +1,95 @@
+<section class="page-heading">
+  <p class="eyebrow">Customer explorer</p>
+  <h1>Hosting capacity data, made queryable.</h1>
+  <p class="lede">
+    This app shows how Con Edison ArcGIS data moves through ingestion, PostGIS persistence, historical snapshots, and a customer-friendly API.
+  </p>
+  <div class="actions">
+    <a routerLink="/feeders" class="button primary">Search feeders</a>
+    <a routerLink="/architecture" class="button">View architecture</a>
+  </div>
+</section>
+
+@if (loading) {
+  <div class="notice">Loading platform summary...</div>
+} @else if (error) {
+  <div class="notice error">{{ error }}</div>
+} @else if (summary) {
+  <section class="summary-band">
+    <div>
+      <span class="label">Mode</span>
+      <strong>{{ summary.mode | uppercase }}</strong>
+    </div>
+    <div>
+      <span class="label">Active feeders</span>
+      <strong>{{ summary.counts.activeFeeders | number }}</strong>
+    </div>
+    <div>
+      <span class="label">Substations</span>
+      <strong>{{ summary.counts.substations | number }}</strong>
+    </div>
+    <div>
+      <span class="label">Snapshots</span>
+      <strong>{{ summary.counts.feederSnapshots | number }}</strong>
+    </div>
+  </section>
+
+  <section class="grid two">
+    <article class="panel">
+      <div class="panel-title">
+        <span>Source capabilities</span>
+      </div>
+      <div class="capability">
+        <b>Con Edison</b>
+        <span [class.good]="summary.sources.conedison.available">{{ summary.sources.conedison.available ? 'available' : 'not loaded' }}</span>
+        <p>{{ summary.sources.conedison.note }}</p>
+      </div>
+      <div class="capability">
+        <b>OpenStreetMap</b>
+        <span [class.good]="summary.sources.osm.available">{{ summary.sources.osm.available ? 'enrichment loaded' : 'optional' }}</span>
+        <p>{{ summary.sources.osm.note }}</p>
+      </div>
+      <div class="capability">
+        <b>Queue data</b>
+        <span>unavailable by design</span>
+        <p>{{ summary.sources.queue.note }}</p>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-title">
+        <span>Pipeline lifecycle</span>
+      </div>
+      <div class="stage-row">
+        @for (stage of summary.pipelineStages; track stage) {
+          <span>{{ stage }}</span>
+        }
+      </div>
+      <p class="explain">
+        The browser never talks to ArcGIS. It uses the same stable FastAPI contracts a customer would use after the data has been validated and persisted.
+      </p>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">
+      <span>Latest ingestion runs</span>
+      <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer">Swagger</a>
+    </div>
+    <div class="table">
+      <div class="table-head">
+        <span>Status</span><span>Pipeline</span><span>Loaded</span><span>Rejected</span><span>Snapshot</span><span>Completed</span>
+      </div>
+      @for (run of summary.latestIngestions; track run.id) {
+        <div class="table-row">
+          <span class="status" [class.success]="run.status === 'SUCCESS'" [class.unchanged]="run.status === 'UNCHANGED'">{{ run.status }}</span>
+          <span>{{ run.pipeline }}</span>
+          <span>{{ run.loadedCount | number }}</span>
+          <span>{{ run.rejectedCount | number }}</span>
+          <span>{{ run.snapshotCreated ? 'created' : 'skipped' }}</span>
+          <span>{{ run.completedAt | date:'short' }}</span>
+        </div>
+      }
+    </div>
+  </section>
+}

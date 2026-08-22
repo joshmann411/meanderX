@@ -23,8 +23,8 @@ if [ ! -f .env ]; then
 fi
 
 echo "Mode: ${APP_MODE}"
-echo "Building Docker image..."
-"${COMPOSE}" build app
+echo "Building Docker images..."
+"${COMPOSE}" build app frontend
 
 echo "Starting PostgreSQL/PostGIS..."
 "${COMPOSE}" up -d db
@@ -66,10 +66,11 @@ else
   exit 1
 fi
 
-echo "Starting FastAPI..."
-"${COMPOSE}" up -d app
+echo "Starting FastAPI and Angular explorer..."
+"${COMPOSE}" up -d app frontend
 
 echo
+echo "Frontend: http://localhost:4200"
 echo "API: http://localhost:8000"
 echo "Swagger: http://localhost:8000/docs"
 echo

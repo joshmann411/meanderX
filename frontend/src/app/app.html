@@ -1,0 +1,28 @@
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" routerLink="/">
+      <span class="brand-mark">MX</span>
+      <span>
+        <b>MeanderX</b>
+        <small>Hosting Capacity Explorer</small>
+      </span>
+    </a>
+
+    <nav aria-label="Primary">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Overview</a>
+      <a routerLink="/feeders" routerLinkActive="active">Feeders</a>
+      <a routerLink="/substations" routerLinkActive="active">Substations</a>
+      <a routerLink="/history" routerLinkActive="active">History</a>
+      <a routerLink="/architecture" routerLinkActive="active">Architecture</a>
+    </nav>
+
+    <div class="sidebar-note">
+      <strong>Customer path</strong>
+      <span>Search domain data from FastAPI. ArcGIS stays behind the ingestion layer.</span>
+    </div>
+  </aside>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

@@ -1,0 +1,61 @@
+<section class="page-heading compact">
+  <p class="eyebrow">Architecture</p>
+  <h1>From public map to customer product.</h1>
+  <p class="lede">The frontend is intentionally downstream of FastAPI. It proves customers can use stable domain APIs without learning ArcGIS internals.</p>
+</section>
+
+<section class="flow">
+  <div class="node source">Con Edison ArcGIS</div>
+  <div class="arrow">extract</div>
+  <div class="node">Pipeline</div>
+  <div class="arrow">validate + transform</div>
+  <div class="node database">PostgreSQL / PostGIS</div>
+  <div class="arrow">serve</div>
+  <div class="node api">FastAPI</div>
+  <div class="arrow">query</div>
+  <div class="node customer">Angular explorer</div>
+</section>
+
+<section class="grid two">
+  <article class="panel">
+    <div class="panel-title"><span>Why domain API contracts?</span></div>
+    <p>
+      Customers care about feeders, substations, geometry, hosting capacity, queue availability, and history. They should not pass ArcGIS query parameters or parse raw attributes.
+    </p>
+  </article>
+
+  <article class="panel">
+    <div class="panel-title"><span>Why immutable snapshots?</span></div>
+    <p>
+      The upstream FeatureServer represents current state. When Con Edison refreshes it, older values disappear. Local snapshots preserve what was seen at each successful capture.
+    </p>
+  </article>
+
+  <article class="panel">
+    <div class="panel-title"><span>Where OSM fits</span></div>
+    <p>
+      The hosting capacity source has feeder geometry and substation relationships, but not reliable physical substation geometry. OpenStreetMap can enrich that gap with confidence scoring.
+    </p>
+  </article>
+
+  <article class="panel">
+    <div class="panel-title"><span>Queue limitation</span></div>
+    <p>
+      The source does not expose enough project queue data to calculate counts safely. The API returns a stable unavailable response instead of inventing a number.
+    </p>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel-title"><span>Demo vs live</span></div>
+  <div class="mode-grid">
+    <div>
+      <b>Demo mode</b>
+      <p>Deterministic fixture data, fast startup, repeatable history examples, and OSM enrichment proof.</p>
+    </div>
+    <div>
+      <b>Live mode</b>
+      <p>Uses the configured Con Edison ArcGIS FeatureServer and optional OSM Overpass enrichment. Larger and slower, but real.</p>
+    </div>
+  </div>
+</section>

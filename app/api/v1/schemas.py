@@ -118,3 +118,54 @@ class ErrorDetail(BaseModel):
 
 class ErrorResponse(BaseModel):
     error: ErrorDetail
+
+
+class SystemCounts(BaseModel):
+    feeders: int
+    active_feeders: int = Field(alias="activeFeeders")
+    substations: int
+    feeder_snapshots: int = Field(alias="feederSnapshots")
+    substation_snapshots: int = Field(alias="substationSnapshots")
+    osm_substations: int = Field(alias="osmSubstations")
+    accepted_osm_matches: int = Field(alias="acceptedOsmMatches")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class IngestionRunSummary(BaseModel):
+    id: int
+    pipeline: str
+    source: str
+    status: str
+    extracted_count: int = Field(alias="extractedCount")
+    valid_count: int = Field(alias="validCount")
+    loaded_count: int = Field(alias="loadedCount")
+    rejected_count: int = Field(alias="rejectedCount")
+    snapshot_created: bool = Field(alias="snapshotCreated")
+    dataset_hash_prefix: Optional[str] = Field(default=None, alias="datasetHashPrefix")
+    completed_at: Optional[datetime] = Field(default=None, alias="completedAt")
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class SourceCapability(BaseModel):
+    available: bool
+    note: str
+
+
+class SystemSources(BaseModel):
+    conedison: SourceCapability
+    osm: SourceCapability
+    queue: SourceCapability
+
+
+class SystemSummaryResponse(BaseModel):
+    mode: str
+    environment: str
+    counts: SystemCounts
+    latest_ingestions: list[IngestionRunSummary] = Field(alias="latestIngestions")
+    sources: SystemSources
+    pipeline_stages: list[str] = Field(alias="pipelineStages")
+
+    model_config = ConfigDict(populate_by_name=True)

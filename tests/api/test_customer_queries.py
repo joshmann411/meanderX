@@ -6,7 +6,7 @@ from geoalchemy2 import WKTElement
 
 from app.core.database import Base, SessionLocal, engine, ensure_postgis
 from app.main import app
-from app.models import Feeder, Substation
+from app.models import Feeder, IngestionRun, Substation
 
 
 @pytest.fixture(autouse=True)
@@ -33,6 +33,18 @@ def fixture_database():
         session.flush()
         session.add_all(
             [
+                IngestionRun(
+                    pipeline="conedison_arcgis",
+                    source="demo-conedison",
+                    status="SUCCESS",
+                    extracted_count=2,
+                    valid_count=2,
+                    loaded_count=2,
+                    rejected_count=0,
+                    snapshot_created=True,
+                    dataset_hash="abc123def456",
+                    completed_at=datetime(2026, 1, 1, 12, 30, 0),
+                ),
                 Feeder(
                     feeder_id="ABC123",
                     substation_id=substation.id,
@@ -138,3 +150,17 @@ def test_invalid_query_returns_422_validation_error():
     response = TestClient(app).get("/api/v1/feeders", params={"limit": 0})
 
     assert response.status_code == 422
+
+
+def test_system_summary_contract():
+    response = TestClient(app).get("/api/v1/system/summary")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "demo"
+    assert body["counts"]["feeders"] == 2
+    assert body["counts"]["activeFeeders"] == 2
+    assert body["sources"]["conedison"]["available"] is True
+    assert body["sources"]["queue"]["available"] is False
+    assert body["pipelineStages"] == ["extract", "validate", "transform", "load", "snapshot", "serve"]
+    assert body["latestIngestions"][0]["datasetHashPrefix"] == "abc123def456"

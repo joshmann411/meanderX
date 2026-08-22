@@ -1,0 +1,61 @@
+<section class="page-heading compact">
+  <p class="eyebrow">Historical snapshots</p>
+  <h1>Show how hosting capacity evolves.</h1>
+  <p class="lede">The upstream endpoint overwrites current state. This app preserves immutable feeder snapshots and compares them structurally.</p>
+</section>
+
+<section class="lookup-bar">
+  <label>
+    Feeder ID
+    <input [(ngModel)]="feederId" placeholder="DEMO-F1 or 103U1" (keyup.enter)="load()" />
+  </label>
+  <button class="button primary" (click)="load()">Load history</button>
+</section>
+
+@if (loading) {
+  <div class="notice">Loading history...</div>
+} @else if (error) {
+  <div class="notice error">{{ error }}</div>
+} @else if (history) {
+  <section class="history-layout">
+    <article class="panel">
+      <div class="panel-title"><span>Timeline</span></div>
+      <div class="timeline">
+        @for (entry of history.history; track entry.capturedAt) {
+          <div class="timeline-item">
+            <span></span>
+            <div>
+              <b>{{ entry.capturedAt | date:'medium' }}</b>
+              <p>PV thermal: {{ entry.pvThermal ?? 'n/a' }}</p>
+              <p>Substation: {{ entry.substationId || 'unknown' }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-title"><span>Detected changes</span></div>
+      @if (changes?.changes?.length) {
+        <div class="change-list">
+          @for (event of changes?.changes; track event.capturedAt) {
+            <div class="change-event">
+              <strong>{{ event.eventType }}</strong>
+              <span>{{ event.capturedAt | date:'medium' }}</span>
+              @for (change of event.changes; track change.field) {
+                <p>{{ change.field }}: {{ change.oldValue ?? 'null' }} -> {{ change.newValue ?? 'null' }}</p>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-inline">No changes detected beyond the current snapshot.</div>
+      }
+    </article>
+  </section>
+} @else {
+  <div class="empty-state">
+    <h2>Load a feeder to see its snapshot timeline.</h2>
+    <p>Demo mode has multiple snapshots for <b>DEMO-F1</b>; live mode will grow as repeated changed ingestions occur.</p>
+  </div>
+}

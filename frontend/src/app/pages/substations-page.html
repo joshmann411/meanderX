@@ -1,0 +1,60 @@
+<section class="page-heading compact">
+  <p class="eyebrow">Substation explorer</p>
+  <h1>See feeder relationships and location enrichment.</h1>
+  <p class="lede">Con Edison provides the feeder-to-substation relationship. OpenStreetMap can enrich the missing physical geometry when a match is confident.</p>
+</section>
+
+<section class="lookup-bar">
+  <label>
+    Substation ID
+    <input [(ngModel)]="substationId" placeholder="DEMO-SUB-A or GRANITE HILL" (keyup.enter)="load()" />
+  </label>
+  <button class="button primary" (click)="load()">Load substation</button>
+</section>
+
+@if (loading) {
+  <div class="notice">Loading substation...</div>
+} @else if (error) {
+  <div class="notice error">{{ error }}</div>
+} @else if (substation) {
+  <section class="substation-layout">
+    <article class="panel">
+      <div class="detail-header">
+        <div>
+          <span class="label">Substation</span>
+          <h2>{{ substation.name || substation.substationId }}</h2>
+        </div>
+        <div class="capacity">
+          <span>Connected feeders</span>
+          <strong>{{ substation.connectedFeeders.count }}</strong>
+        </div>
+      </div>
+      <app-geometry-preview [geometry]="substation.geometry"></app-geometry-preview>
+      <dl>
+        <dt>Geometry source</dt>
+        <dd>{{ substation.geometrySource?.source || 'Not available yet' }}</dd>
+        <dt>Match confidence</dt>
+        <dd>{{ substation.geometrySource?.matchConfidence ?? 'n/a' }}</dd>
+        <dt>Source</dt>
+        <dd>{{ substation.sourceMetadata['source'] }}</dd>
+      </dl>
+    </article>
+
+    <article class="panel">
+      <div class="panel-title"><span>Feeders at this substation</span></div>
+      <div class="feeder-list">
+        @for (feeder of feeders; track feeder.feederId) {
+          <div>
+            <b>{{ feeder.feederId }}</b>
+            <span>{{ feeder.hostingCapacity.pvThermal ?? 'n/a' }} MW PV thermal</span>
+          </div>
+        }
+      </div>
+    </article>
+  </section>
+} @else {
+  <div class="empty-state">
+    <h2>Load a substation to inspect its network.</h2>
+    <p>Try <b>DEMO-SUB-A</b> in demo mode or <b>GRANITE HILL</b> after live ingestion.</p>
+  </div>
+}

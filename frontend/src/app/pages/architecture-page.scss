@@ -1,0 +1,74 @@
+.flow {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, auto));
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.node {
+  min-width: 142px;
+  min-height: 82px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  text-align: center;
+  font-weight: 850;
+}
+
+.node.source {
+  background: #eef3ef;
+}
+
+.node.database {
+  background: #f5ead9;
+}
+
+.node.api {
+  background: #e9eef3;
+}
+
+.node.customer {
+  background: #f4e8e1;
+}
+
+.arrow {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.panel p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.mode-grid div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  padding: 14px;
+}
+
+.mode-grid p {
+  margin-top: 6px;
+}
+
+@media (max-width: 760px) {
+  .mode-grid {
+    grid-template-columns: 1fr;
+  }
+}

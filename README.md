@@ -19,6 +19,7 @@ Default mode is deterministic demo mode. It builds Docker images, starts PostGIS
 Reviewer URLs:
 
 ```text
+Frontend: http://localhost:4200
 API: http://localhost:8000
 Swagger: http://localhost:8000/docs
 ```
@@ -70,6 +71,24 @@ It creates deterministic fixture data showing:
 
 Demo fixtures are explicitly seeded through `python -m app.cli demo seed`; they are not mixed into live ingestion.
 
+## Frontend Explorer
+
+The Angular frontend is a standalone visual layer for reviewers and non-domain users:
+
+```text
+http://localhost:4200
+```
+
+Pages:
+
+- **Overview** shows mode, counts, latest ingestion runs, source capabilities, and the pipeline lifecycle.
+- **Feeders** searches customer-facing feeder data and displays hosting capacity, geometry, source timestamp, and queue availability.
+- **Substations** shows substation details, connected feeders, and OSM geometry enrichment/provenance where available.
+- **History** shows immutable feeder snapshots and detected changes.
+- **Architecture** explains how Con Edison ArcGIS, OSM, PostGIS, FastAPI, and the Angular customer app fit together.
+
+The frontend calls only FastAPI domain endpoints. It does not expose ArcGIS query syntax or raw source structures.
+
 ## Live Mode
 
 Live mode uses external sources:
@@ -89,6 +108,15 @@ OSM_MATCH_THRESHOLD=0.72
 
 If OSM ingestion is unavailable, the script reports that clearly and leaves the core Con Edison API available.
 
+After live mode starts, open:
+
+```text
+Frontend: http://localhost:4200
+Swagger: http://localhost:8000/docs
+```
+
+Live mode may take longer because the Con Edison layer can contain many ArcGIS features that normalize down to fewer unique customer feeders.
+
 ## CLI
 
 ```bash
@@ -100,6 +128,12 @@ python -m app.cli api
 ```
 
 ## API Examples
+
+Get platform summary for the frontend:
+
+```bash
+curl "http://localhost:8000/api/v1/system/summary"
+```
 
 Search feeders:
 

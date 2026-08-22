@@ -1,0 +1,72 @@
+.lookup-bar {
+  margin-top: 0;
+  margin-bottom: 18px;
+}
+
+.lookup-bar label {
+  min-width: min(360px, 100%);
+}
+
+.substation-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(320px, 1.1fr);
+  gap: 18px;
+}
+
+.capacity {
+  min-width: 130px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #eef3ef;
+  padding: 12px;
+  text-align: right;
+}
+
+.capacity span,
+.capacity strong {
+  display: block;
+}
+
+.capacity span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.capacity strong {
+  margin-top: 4px;
+  font-size: 1.65rem;
+}
+
+dl {
+  margin-top: 16px;
+}
+
+.feeder-list {
+  display: grid;
+  gap: 9px;
+  max-height: 650px;
+  overflow: auto;
+}
+
+.feeder-list div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  padding: 11px 12px;
+}
+
+.feeder-list span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 940px) {
+  .substation-layout {
+    grid-template-columns: 1fr;
+  }
+}

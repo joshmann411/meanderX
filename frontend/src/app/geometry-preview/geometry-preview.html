@@ -1,0 +1,26 @@
+@if (points.length) {
+  <div class="preview">
+    <svg viewBox="0 0 300 180" role="img" aria-label="Geometry preview">
+      <rect x="0" y="0" width="300" height="180"></rect>
+      <g class="grid">
+        <path d="M0 45H300M0 90H300M0 135H300M75 0V180M150 0V180M225 0V180"></path>
+      </g>
+      @if (projectedPoints.length === 1) {
+        <circle [attr.cx]="projectedPoints[0][0]" [attr.cy]="projectedPoints[0][1]" r="8"></circle>
+      } @else {
+        <path class="shape" [attr.d]="path"></path>
+        @for (point of projectedPoints.slice(0, 12); track $index) {
+          <circle class="node" [attr.cx]="point[0]" [attr.cy]="point[1]" r="3"></circle>
+        }
+      }
+    </svg>
+    <div class="meta">
+      <span>{{ geometry?.type }}</span>
+      <span>{{ points.length }} points</span>
+    </div>
+  </div>
+} @else {
+  <div class="empty-preview">
+    <span>No geometry available</span>
+  </div>
+}
